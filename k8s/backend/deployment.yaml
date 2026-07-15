@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: ecommerce
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: alfanhd/mern-ecommerce-backend:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PORT
+              value: "5000"
+            - name: NODE_ENV
+              value: "development"
+            - name: CLIENT_URL
+              value: "http://ecommerce.local"
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: MONGO_URI
+            - name: UPSTASH_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: UPSTASH_REDIS_URL
+            - name: ACCESS_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: ACCESS_TOKEN_SECRET
+            - name: REFRESH_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: REFRESH_TOKEN_SECRET
+            - name: CLOUDINARY_CLOUD_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: CLOUDINARY_CLOUD_NAME
+            - name: CLOUDINARY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: CLOUDINARY_API_KEY
+            - name: CLOUDINARY_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: CLOUDINARY_API_SECRET
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: STRIPE_SECRET_KEY
