@@ -25,7 +25,7 @@ In short: anyone can clone the app itself — but **how it's brought to a stable
 
 The diagram below shows the full flow — from a developer pushing code, to the app running on Kubernetes and being monitored in real time.
 
-![Nimbus Shop Architecture](docs/architecture-diagram.png)
+<img width="1182" height="1523" alt="621510825-bfbff3d7-aa4e-4fde-b613-d69adb802a7c" src="https://github.com/user-attachments/assets/70ef32e1-4208-4c90-b965-5ebfb6e27e64" />
 
 > 📌 **Note:** save the architecture diagram image as `architecture-diagram.png` inside this repository's `docs/` folder so it renders automatically in this README.
 
@@ -70,9 +70,6 @@ The diagram below shows the full flow — from a developer pushing code, to the 
 **Third-Party Services**
 - Cloudinary (Image hosting)
 - Stripe (Payment gateway)
-
----
----
 
 ## 🚀 Running It Locally
 
