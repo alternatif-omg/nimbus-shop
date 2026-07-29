@@ -27,7 +27,6 @@ The diagram below shows the full flow — from a developer pushing code, to the 
 
 <img width="1182" height="1523" alt="621510825-bfbff3d7-aa4e-4fde-b613-d69adb802a7c" src="https://github.com/user-attachments/assets/70ef32e1-4208-4c90-b965-5ebfb6e27e64" />
 
-> 📌 **Note:** save the architecture diagram image as `architecture-diagram.png` inside this repository's `docs/` folder so it renders automatically in this README.
 
 ### Flow Overview (top to bottom)
 
@@ -109,7 +108,7 @@ kubectl apply -f ./k8s/
 kubectl get pods
 ```
 
-> 📖 Full step-by-step instructions are available in the [`docs/`](./docs) folder.
+
 
 ---
 
