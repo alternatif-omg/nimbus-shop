@@ -15,7 +15,7 @@ This repository is **not** about building shop features. The application code co
 - 🔁 **CI/CD** — one GitHub Actions workflow: test → security scan → build & push images → deploy.
 - 🛡️ **Deployment hygiene** — rolling updates with zero unavailable pods, readiness/liveness probes, and CPU/memory requests and limits.
 
-> **Honest status:** this runs on a **local Minikube cluster**, deployed by a **self-hosted runner** on my machine. It is a lab environment, not a production system. See the [Roadmap](#-roadmap-not-implemented-yet) for what is deliberately missing.
+> **Honest status:** this runs on a **single-node Minikube cluster on one EC2 instance** (`t3.medium`), deployed by a **self-hosted runner** on that same instance. It is a lab environment, not a production system. See the [Roadmap](#-roadmap-not-implemented-yet) for what is deliberately missing.
 
 ---
 
@@ -95,13 +95,15 @@ CLOUDINARY_API_SECRET=
 STRIPE_SECRET_KEY=
 ```
 
-### 2a. Run with Docker Compose
+### 2a. Docker Compose (experimental, not verified end to end)
 
 ```bash
 cd docker
-VITE_API_URL=http://localhost:5000/api docker compose up --build
+docker compose up --build
 # frontend: http://localhost:5173   backend: http://localhost:5000
 ```
+
+Known limitation: the production frontend calls the API on the relative path `/api` (`frontend/src/lib/axios.js`), and the frontend container's Nginx does **not** proxy `/api` to the backend. In Compose the backend therefore starts, but the UI cannot reach it. Routing `/api` is done by the Kubernetes Ingress, so use the Kubernetes path below for a working setup. (`VITE_API_URL` appears in some build files but is not read by the application code.)
 
 ### 2b. Run on Kubernetes (Minikube)
 
@@ -131,9 +133,12 @@ Repository secrets used by `.github/workflows/ci.yml`:
 | Secret | Purpose |
 |---|---|
 | `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` | log in and push images |
-| `KUBECONFIG_DATA` | base64 kubeconfig used by the deploy job |
 
-The deploy job needs a self-hosted runner labeled `minikube` that can reach the cluster.
+The deploy job runs on a self-hosted runner labeled `minikube`, installed **on the same machine as the cluster**, and uses that machine's own `~/.kube/config`. No kubeconfig secret is needed (and none should be added: a workflow step that writes one would overwrite the runner's kubeconfig).
+
+### 4. Run on a fresh EC2 instance
+
+`scripts/ec2-bootstrap.sh` installs Docker, kubectl and minikube on an Ubuntu x86_64 instance (2 vCPU, ~4 GB RAM, 25 GB disk), starts the cluster, applies the manifests (without secrets) and exposes port 80 through a systemd service. The security group must allow port 80. Then create `backend/.env`, run `generate-secrets.sh`, apply `secrets.yaml`, and register the GitHub runner with the label `minikube`.
 
 ---
 
@@ -149,6 +154,9 @@ The pipeline was inherited in a broken state (every run on `develop` was red). R
 | Backend crashed at start with `NODE_ENV=production` | `app.get("*")` is invalid in Express 5 (path-to-regexp v8) | `"/{*splat}"` |
 | CD never ran | `workflow_run` only fires for workflow files on the *default* branch | deploy merged into `ci.yml` as a job |
 | Supply-chain risk | `trivy-action@master` floated | pinned to a commit SHA |
+| `kubectl` lost its cluster when the runner came online | queued deploy jobs from the old workflow wrote a foreign `KUBECONFIG_DATA` over the runner's `~/.kube/config` | deploy uses the runner's own kubeconfig; `develop` synced with `main` |
+| Port 80 refused even with the security group open | a backgrounded `socat` died with the SSH session | run it as a systemd service |
+| Ingress rejected right after `minikube addons enable ingress` | admission webhook not ready yet | wait for the controller pod before applying the Ingress |
 
 ---
 
