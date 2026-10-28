@@ -1,10 +1,10 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [develop, main]
   pull_request:
-    branches: [main]
+    branches: [develop, main]
 
 jobs:
   test:
@@ -89,3 +89,28 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/mern-ecommerce-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/mern-ecommerce-frontend:${{ github.sha }}
+
+  deploy:
+    needs: build-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: [self-hosted, minikube]
+    env:
+      KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
+      IMAGE_PREFIX: ${{ secrets.DOCKERHUB_USERNAME }}/mern-ecommerce
+    steps:
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "$KUBECONFIG_DATA" | base64 -d > "$HOME/.kube/config"
+
+      - name: Deploy backend
+        run: |
+          kubectl set image deployment/backend-deployment \
+            backend="$IMAGE_PREFIX-backend:${{ github.sha }}" -n ecommerce
+          kubectl rollout status deployment/backend-deployment -n ecommerce --timeout=180s
+
+      - name: Deploy frontend
+        run: |
+          kubectl set image deployment/frontend-deployment \
+            frontend="$IMAGE_PREFIX-frontend:${{ github.sha }}" -n ecommerce
+          kubectl rollout status deployment/frontend-deployment -n ecommerce --timeout=180s
