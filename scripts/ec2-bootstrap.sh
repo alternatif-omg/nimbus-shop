@@ -35,7 +35,10 @@ sg docker -c "minikube addons enable ingress"
 [ -d "$HOME/nimbus-shop" ] || git clone "$REPO" "$HOME/nimbus-shop"
 cd "$HOME/nimbus-shop"
 kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/backend -f k8s/frontend -f k8s/ingress
+kubectl apply -f k8s/backend -f k8s/frontend
+# the ingress admission webhook rejects the Ingress until the controller is ready
+kubectl wait -n ingress-nginx --for=condition=ready pod -l app.kubernetes.io/component=controller --timeout=180s
+kubectl apply -f k8s/ingress
 
 # shortcut: socat is not restarted after a reboot, rerun this line (or turn it into a systemd unit) then
 sudo pkill -f "socat TCP-LISTEN:80" 2>/dev/null || true
