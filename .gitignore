@@ -24,3 +24,5 @@ troubleshooting.md
 *.njsproj
 *.sln
 *.sw?
+echo "kubectl" >> .gitignore
+echo "minikube-linux-amd64" >> .gitignore

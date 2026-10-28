@@ -1,0 +1,32 @@
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+    branches: [develop]
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: [self-hosted, minikube]
+    steps:
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_DATA }}" | base64 -d > $HOME/.kube/config
+
+      - name: Deploy backend
+        run: |
+          kubectl set image deployment/backend-deployment \
+            backend=${{ secrets.DOCKERHUB_USERNAME }}/mern-ecommerce-backend:${{ github.event.workflow_run.head_sha }} \
+            -n ecommerce
+          kubectl rollout status deployment/backend-deployment -n ecommerce
+
+      - name: Deploy frontend
+        run: |
+          kubectl set image deployment/frontend-deployment \
+            frontend=${{ secrets.DOCKERHUB_USERNAME }}/mern-ecommerce-frontend:${{ github.event.workflow_run.head_sha }} \
+            -n ecommerce
+          kubectl rollout status deployment/frontend-deployment -n ecommerce
