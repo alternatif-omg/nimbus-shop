@@ -40,9 +40,12 @@ kubectl apply -f k8s/backend -f k8s/frontend
 kubectl wait -n ingress-nginx --for=condition=ready pod -l app.kubernetes.io/component=controller --timeout=180s
 kubectl apply -f k8s/ingress
 
-# shortcut: socat is not restarted after a reboot, rerun this line (or turn it into a systemd unit) then
-sudo pkill -f "socat TCP-LISTEN:80" 2>/dev/null || true
-sudo nohup socat TCP-LISTEN:80,fork,reuseaddr TCP:"$(sg docker -c 'minikube ip')":80 >/dev/null 2>&1 &
+# a systemd unit, not nohup: a backgrounded socat dies when the terminal session ends
+# shortcut: assumes the docker driver's fixed minikube IP, update it if `minikube ip` differs
+MINIKUBE_IP=$(sg docker -c 'minikube ip')
+printf '[Unit]\nDescription=Expose minikube ingress on :80\nAfter=docker.service network-online.target\n\n[Service]\nExecStart=/usr/bin/socat TCP-LISTEN:80,fork,reuseaddr TCP:%s:80\nRestart=always\n\n[Install]\nWantedBy=multi-user.target\n' "$MINIKUBE_IP" | sudo tee /etc/systemd/system/nimbus-socat.service >/dev/null
+sudo systemctl daemon-reload
+sudo systemctl enable --now nimbus-socat
 
 cat <<MSG
 
