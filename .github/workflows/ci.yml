@@ -98,14 +98,9 @@ jobs:
       run:
         shell: bash # steps use bash syntax; the default shell on a Windows runner is PowerShell
     env:
-      KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
       IMAGE_PREFIX: ${{ secrets.DOCKERHUB_USERNAME }}/mern-ecommerce
+    # the runner uses its own local kubeconfig (same machine as the cluster), so no kubeconfig secret is needed
     steps:
-      - name: Set up kubeconfig
-        run: |
-          mkdir -p "$HOME/.kube"
-          echo "$KUBECONFIG_DATA" | base64 -d > "$HOME/.kube/config"
-
       - name: Deploy backend
         run: |
           kubectl set image deployment/backend-deployment \
