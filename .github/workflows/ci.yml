@@ -94,6 +94,9 @@ jobs:
     needs: build-push
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: [self-hosted, minikube]
+    defaults:
+      run:
+        shell: bash # steps use bash syntax; the default shell on a Windows runner is PowerShell
     env:
       KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_DATA }}
       IMAGE_PREFIX: ${{ secrets.DOCKERHUB_USERNAME }}/mern-ecommerce
